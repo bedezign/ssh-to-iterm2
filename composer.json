@@ -1,0 +1,24 @@
+{
+  "name": "bedezign/ssh-to-iterm",
+  "description": "Converts an SSH config file into iTerm2 Dynamic Profiles",
+  "minimum-stability": "stable",
+  "license": "proprietary",
+  "authors": [
+    {
+      "name": "Steve Guns",
+      "email": "steve@bedezign.com"
+    }
+  ],
+  "autoload": {
+    "psr-4": {
+      "SSHToIterm2\\": "src/"
+    },
+    "files": [
+      "src/Tools/helpers.php"
+    ]
+  },
+  "require": {
+    "ext-posix": "*",
+    "symfony/console": "^4.1"
+  }
+}
