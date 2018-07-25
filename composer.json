@@ -2,7 +2,7 @@
   "name": "bedezign/ssh-to-iterm",
   "description": "Converts an SSH config file into iTerm2 Dynamic Profiles",
   "minimum-stability": "stable",
-  "license": "proprietary",
+  "license": "Apache-2.0",
   "authors": [
     {
       "name": "Steve Guns",
