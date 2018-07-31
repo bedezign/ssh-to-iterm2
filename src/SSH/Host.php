@@ -15,10 +15,13 @@ class Host
     private $lines = [];
     /** @var bool true if any values were added using a comment line */
     private $commentValues = false;
+    /** @var string Originating filename */
+    private $file;
 
-    public function __construct($patterns = [])
+    public function __construct($patterns = [], $file = null)
     {
         $this->patterns = $patterns;
+        $this->file = $file;
     }
 
     /**
@@ -46,10 +49,6 @@ class Host
 
     public function __get($name)
     {
-        if (\in_array($name, ['patterns', 'commentValues'])) {
-            return $this->$name;
-        }
-
         return $this->get($name);
     }
 
@@ -60,9 +59,12 @@ class Host
         }
     }
 
-
-    public function get($name, $default = null): ?Line
+    public function get($name, $default = null)
     {
+        if (\in_array($name, ['patterns', 'commentValues', 'file'])) {
+            return $this->$name;
+        }
+
         foreach ($this->lines as $line) {
             if ($line->is($name)) {
                 return $line;

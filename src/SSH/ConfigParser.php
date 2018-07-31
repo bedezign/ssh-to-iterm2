@@ -5,8 +5,8 @@ namespace SSHToIterm2\SSH;
 class ConfigParser
 {
     private $file;
-    private $hosts           = [];
-    private $commentKeywords = [];
+    private $hosts = [];
+    private $commentKeywords;
 
     /**
      * @param string $file
@@ -40,14 +40,14 @@ class ConfigParser
         $lines        = $this->read();
         $host         = null;
         $fromComments = 0;
-        foreach ($lines as $string) {
+        foreach ($lines as [$path, $string]) {
             $line = new Line($string);
             if ($line->is('Host')) {
                 if ($host) {
                     $host->commentValues = 0 !== $fromComments;
-                    $this->hosts[]      = $host;
+                    $this->hosts[]       = $host;
                 }
-                $host         = new Host($line->value);
+                $host         = new Host($line->value, $path);
                 $fromComments = 0;
             }
 
@@ -81,7 +81,7 @@ class ConfigParser
 
         $result = [];
 
-        $lines = file(fixPath($file));
+        $lines = file($path = fixPath($file));
         foreach ($lines as $line) {
             $line = trim($line);
 
@@ -91,7 +91,7 @@ class ConfigParser
                     $result = array_merge($result, $this->read($includeFile));
                 }
             }
-            $result[] = $line;
+            $result[] = [$path, $line];
         }
 
         return $result;

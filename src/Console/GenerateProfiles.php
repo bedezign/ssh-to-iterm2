@@ -4,6 +4,7 @@ namespace SSHToIterm2\Console;
 
 use SSHToIterm2\DynamicProfiles\Collection;
 use SSHToIterm2\SSH\ConfigParser;
+use SSHToIterm2\SSH\Line;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Input\InputOption;
@@ -28,7 +29,8 @@ class GenerateProfiles extends Command
             ->addOption('wildcard', 'w', InputOption::VALUE_NONE, 'Include hosts with a wildcard pattern instead of skipping them')
             ->addOption('multi-pattern', 'm', InputOption::VALUE_OPTIONAL, 'Behavior for hosts with multiple patterns. Use the <info>first</info> only, use <info>all</info> or <info>ignore</info> the host.', 'first')
             ->addOption('directory', 'd', InputOption::VALUE_OPTIONAL, 'Path to iTerm2\'s dynamic profiles (when using <info>--save</info>)', self::DIRECTORY)
-            ->addOption('bind', 'b', InputOption::VALUE_NONE, 'Fill the <info>Bound Hosts</info> list with all patterns and the hostname. (see "Automatic Profile Switching" in Profile > Advanced)');
+            ->addOption('bind', 'b', InputOption::VALUE_NONE, 'Fill the <info>Bound Hosts</info> list with all patterns and the hostname. (see "Automatic Profile Switching" in Profile > Advanced)')
+            ->addOption('autotag', 't', InputOption::VALUE_REQUIRED, 'Automatically add tags for hosts (see README.md for formatting options)');
     }
 
     protected function execute(InputInterface $input, OutputInterface $output)
@@ -74,7 +76,7 @@ class GenerateProfiles extends Command
         // Since "save" has a default value we can't detect if it was actually specified by looking at the value, so fall back to hasParameterOption for that
         $save = $input->hasParameterOption('--save', true) || $input->hasParameterOption('-s', true);
         $this->getProfiles()->write(
-            $save ? fixPath(rtrim($input->getOption('directory'), '\\/'). '/' . ($input->getOption('save') ?? self::FILENAME), true) : false,
+            $save ? fixPath(rtrim($input->getOption('directory'), '\\/') . '/' . ($input->getOption('save') ?? self::FILENAME), true) : false,
             $this->getOptionConfiguration(), $this->getCallbacks($input)
         );
     }
@@ -136,9 +138,9 @@ class GenerateProfiles extends Command
                     // Use the first pattern to connect instead of hostname (on the chance that hostname is not a part of
                     // the config section and will not be assigned the correct options by ssh)
                     // Possible improvement: Iterate through patters to make sure we use a non-wildcard one
-                    $hostname = $host->patterns[0];
+                    $hostname                = $host->patterns[0];
                     $array['Custom Command'] = 'Yes';
-                    $array['Command'] = 'ssh ' . $hostname;
+                    $array['Command']        = 'ssh ' . $hostname;
                 }
                 return $array;
             }
@@ -151,6 +153,65 @@ class GenerateProfiles extends Command
                     $array['Bound Hosts'][] = $hostname->valueString;
                 }
                 $array['Bound Hosts'] = array_unique($array['Bound Hosts']);
+                return $array;
+            };
+        }
+
+        if ($autoTags = $input->getOption('autotag')) {
+            $autoTags             = new Line('AutoTag ' . $autoTags);
+            $callbacks['AutoTag'] = function($profile, $host, $array) use ($autoTags) {
+                $tags = array_key_exists('Tags', $array) ? $array['Tags'] : [];
+
+                // Assemble substitutes
+                $substitutes = [
+                    '%h' => current($host->get('Host')->value),
+                    '%p' => $host->get('Host')->value,
+                    '%l' => implode(',', $host->get('Host')->value),
+                    '%f' => basename($host->file),
+                    '%d' => basename(\dirname($host->file)),
+                ];
+
+                // Create an uppercase variant of all and make a list of the ones that have array'ed values
+                $arrays = [];
+                foreach ($substitutes as $i => $v) {
+                    $u = strtoupper($i);
+                    if (\is_array($v)) {
+                        $arrays[] = $i;
+                        $arrays[] = $u;
+                        $substitutes[$u] = array_map('strtoupper', $v);
+                    } else {
+                        $substitutes[$u] = strtoupper($v);
+                    }
+                }
+                $arrayPattern = '/(' . implode('|', array_map(function($value) { return str_replace(['|', '/'], ['\|', '\/'], $value); }, $arrays)) . ')/';
+
+                // Eliminate all array values, replace by a comma separated list
+                $substitutesFlat = $substitutes;
+                array_walk($substitutesFlat, function(&$value) { $value = \is_array($value) ? implode(',', $value) : $value; });
+
+                // Add the tags
+                foreach ($autoTags->value as $tag) {
+                    $copy = $substitutesFlat;
+
+                    // Fake loop once for everything
+                    $iterator = key($copy);
+                    $values = [current($copy)];
+
+                    if (preg_match($arrayPattern, $tag, $matches)) {
+                        // One of our array'ed values? Then we'll loop for real
+                        $iterator = $matches[0];
+                        $values = $substitutes[$matches[0]];
+                    }
+
+                    foreach ($values as $value) {
+                        $copy[$iterator] = $value;
+                        $tags[] = str_replace(array_keys($copy), array_values($copy), $tag);
+                    }
+                }
+
+                if (\count($tags)) {
+                    $array['Tags'] = $tags;
+                }
                 return $array;
             };
         }

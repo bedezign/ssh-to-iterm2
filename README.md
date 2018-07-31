@@ -85,7 +85,7 @@ Currently the tool only supports a limited amount of config keywords/profile opt
 
 ## Guid
 
-At this point this is an auto-generated SHA1 checksum off the host patterns and cannot be overridden. 
+At this point this is an auto-generated SHA1 checksum of the host patterns and cannot be overridden. 
 As long as you don't change the patterns the resulting `Guid` remains the same. 
 
 ### Ignore
@@ -146,24 +146,39 @@ This option works together with `--directory`
 Override the folder to which the resulting file will be written. 
 iTerm2's default watched folder is `~/Library/Application Support/iTerm2/DynamicProfiles`
 
-## --wildcard (-w)
+### --autotag (-t)
+
+Automatically add a tag to each host. The following substitutions are available:
+
+* `%h`: First pattern of the Host.
+* `%p`: **Every** pattern of the Host (Looped substitute, might result in multiple tags)
+* `%l`: Comma separated list of the patterns of the Host
+* `%d`: Directory basename of the config file path (for `~/.ssh/client1/config` this would be `client1`)
+* `%f`: Filename of the config file
+
+All substitutions can be specified as an uppercase letter to use the uppercase version (eg `%D` would be `CLIENT1`)
+
+For example `--autotag '"Project %D" hostname/%p'` would add 2 or more tags to every host. A `Project [DIRECTORY NAME]` (spaces are supported) and a nested `hostname/hostname` times the amount of patterns.
+When using substitutes that can be a list, only the first one will be iterated. If, for example you use `%p` and `%P` in a single tag, it will generate separate tags for each value of `%p`, but all `%P` instances will be replaced by a comma separated list. 
+
+### --wildcard (-w)
 
 Process `Host` entries that contain wildcard patterns instead of skipping them. 
 As they usually result in an unusable profile (`ssh server*` won't really work), skipping them is the most logical and thus default behavior. 
 
-## --multi-pattern (-m)
+### --multi-pattern (-m)
 
 What to do with Host entries that have multiple patterns (`Host server1 server1alternative`)?
  
 The default behavior (`first`) is to generate a profile for the first pattern only.
 Alternate values are `ignore` (completely ignore the entry) or `all` to generate a separate profile for each of the patterns.   
 
-## --uncommented (-u)
+### --uncommented (-u)
 
 Include `Hosts` that do not have any of the known keywords in their comments instead of ignoring them. This allows you to 
 edit your config files in pieces and will only yields profiles for the Hosts you actually updated.  
 
-## --bind (-b)
+### --bind (-b)
 
 Add a so called `Bound Hosts` list that includes all patterns and (if present) the `HostName`. This assists you in using iTerms' [Automatic Profile Switching](https://www.iterm2.com/features.html#automatic-profile-switching). 
 You'll find the configuration entries on the `Advanced` page of the Profile.

@@ -58,6 +58,9 @@ class Line
     public function __get($name)
     {
         if (\in_array($name, ['keyword', 'value', 'valueString', 'comment', 'line'])) {
+            if ($name === 'value') {
+                reset($this->value);
+            }
             return $this->$name;
         }
 
