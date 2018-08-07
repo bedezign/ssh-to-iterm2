@@ -70,7 +70,6 @@ As an example, the generated profile could look like this:
         "Jumpstations",
         "tag with spaces"
     ],
-    "Custom Command": "Yes",
     "Command": "ssh bastion"
 }
 ```
@@ -118,15 +117,26 @@ With regular profiles this is impossible. As soon as you duplicate it it is no l
 
 ### CustomCommand
 
-"`Yes`" to configure a custom command to execute via the `Command` keyword. If no `CustomCommand` option is found, an `ssh <first-host-pattern>` custom command will be automatically added for you.
+"`Yes`" to configure a custom command to execute via the `Command` keyword. You can just specify a `Command` though, `Custom Command` will automatically be added.
 
 ### Command
 
-See above, the actual command to execute if you want to specify your own. (`CustomCommand` is not automatically added at this point, so make sure to add it yourself)
+Related to above, but the actual command to execute if you want to specify your own. `CustomCommand` is automatically added if you specify a command, so adding that is optional.
+If no `CustomCommand` option is found after the processing of the Host, an `ssh <first-host-pattern>` custom command will be automatically added for you.
 
 ### Tags
 
 A space-separated list of tags for the profile. Spaces within tags are supported by double-quoting them ("*tag with spaces*").
+
+### Trigger
+
+Can contain the JSON to define a trigger. This can be specified multiple times (one per trigger).
+The easiest way to obtain the syntax is to define them manually in iTerm2 and then use "Copy Profile as JSON" under "Other Actions..." to extract it.
+Just specify it as a one liner to use (example is to open the password manager):
+
+```
+# Trigger {"partial": true, "parameter": "client\/hostname\/username", "regex": "assword:", "action" : "PasswordTrigger"}
+```
 
 ## Command Line Arguments
 

@@ -21,27 +21,29 @@ class Profile
     public function asArray($options, $extraCallbacks = [])
     {
         $profile = [
-            'Name' => $this->name(),
+            'Name' => $name = $this->name(),
             'Guid' => $this->guid(),
         ];
 
         foreach ($options as $keyword => $action) {
-            $line = $this->host->get($keyword);
-            if ($line) {
+            $lines = $this->host->get($keyword, [], true);
+            foreach ($lines as $line) {
                 if ($action === false) {
                     continue;
                 }
                 if (\is_string($action)) {
                     $profile[$action] = $line->valueString;
+                } elseif (\is_callable($action)) {
+                    $profile = $action($profile, $line, $this->host, $this);
                 }
-                elseif (\is_callable($action)) {
-                    $profile = $action($this, $this->host, $profile);
+                if (!\is_array($profile)) {
+                    throw new \RuntimeException("Processing keyword '$keyword' for host '$name' did not result in an array");
                 }
             }
         }
 
         foreach ($extraCallbacks as $callback) {
-            $profile = $callback($this, $this->host, $profile);
+            $profile = $callback($profile, $this->host, $this);
         }
 
         return $profile;

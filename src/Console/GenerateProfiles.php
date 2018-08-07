@@ -133,7 +133,7 @@ class GenerateProfiles extends Command
         $callbacks = [
             // If no custom command was specified add one. We can safely assume all hosts are SSH hosts I think...
             // Note that if the first pattern is a wildcard pattern, this won't work
-            'CustomCommand' => function($profile, $host, $array) {
+            'CustomCommand' => function($array, $host) {
                 if (!array_key_exists('Command', $array)) {
                     // Use the first pattern to connect instead of hostname (on the chance that hostname is not a part of
                     // the config section and will not be assigned the correct options by ssh)
@@ -147,7 +147,7 @@ class GenerateProfiles extends Command
         ];
 
         if ($input->getOption('bind')) {
-            $callbacks['BoundHosts'] = function($profile, $host, $array) {
+            $callbacks['BoundHosts'] = function($array, $host) {
                 $array['Bound Hosts'] = $host->get('Host')->value;
                 if ($hostname = $host->get('Hostname')) {
                     $array['Bound Hosts'][] = $hostname->valueString;
@@ -159,7 +159,7 @@ class GenerateProfiles extends Command
 
         if ($autoTags = $input->getOption('autotag')) {
             $autoTags             = new Line('AutoTag ' . $autoTags);
-            $callbacks['AutoTag'] = function($profile, $host, $array) use ($autoTags) {
+            $callbacks['AutoTag'] = function($array, $host) use ($autoTags) {
                 $tags = array_key_exists('Tags', $array) ? $array['Tags'] : [];
 
                 // Assemble substitutes

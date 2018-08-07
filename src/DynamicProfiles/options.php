@@ -15,12 +15,30 @@ return [
     'Badge'         => 'Badge Text',
     'ParentProfile' => 'Dynamic Profile Parent Name',
     'CustomCommand' => 'Custom Command',
-    'Command'       => 'Command',
-    'Tags'          => function($profile, $host, $array) {
-        $tags = $host->get('tags');
+    'Command'       => function($array, $line) {
+        $command = $line->firstValue;
+        if ($command) {
+            if (!array_key_exists('Custom Command', $array)) {
+                $array['Custom Command'] = 'Yes';
+            }
+            $array['Command'] = $command;
+        }
+        return $array;
+    },
+    'Tags'          => function($array, $tags) {
         if ($tags && \count($tags->value)) {
             $array['Tags'] = $tags->value;
         }
         return $array;
     },
+    'Trigger' => function($array, $line) {
+        $trigger = json_decode($line->valueString, true);
+        if ($trigger) {
+            if (!array_key_exists('Triggers', $array)) {
+                $array['Triggers'] = [];
+            }
+            $array['Triggers'][] = $trigger;
+        }
+        return $array;
+    }
 ];

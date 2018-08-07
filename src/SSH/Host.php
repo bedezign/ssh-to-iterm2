@@ -59,17 +59,23 @@ class Host
         }
     }
 
-    public function get($name, $default = null)
+    public function get($name, $default = null, $supportMultiple = false)
     {
         if (\in_array($name, ['patterns', 'commentValues', 'file'])) {
             return $this->$name;
         }
 
+        $lines = [];
         foreach ($this->lines as $line) {
             if ($line->is($name)) {
-                return $line;
+                $lines[] = $line;
             }
         }
+
+        if (\count($lines)) {
+            return $supportMultiple ? $lines : reset($lines);
+        }
+
         return $default;
     }
 
